@@ -1,0 +1,721 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Electrical Safety Analyzer Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: hazard-striped header; device setup beside a live summary; analyzer faceplate beside the test circuit; full-width test matrix; guide at the bottom. */
+:root {
+  --bg: #E9ECEE;
+  --surface: #F7F8F9;
+  --field: #FFFFFF;
+  --fg: #14181B;
+  --muted: #58646B;
+  --line: #CDD3D7;
+  --accent: #F2B705;
+  --on-accent: #14181B;
+  --stripe: #14181B;
+  --sel: #FFF3C4;
+  --hot: #D9462B;
+  --on-hot: #FFFFFF;
+  --good: #1B7F45;
+  --on-good: #FFFFFF;
+  --good-bg: #DDF0E4;
+  --bad: #B3261E;
+  --on-bad: #FFFFFF;
+  --bad-bg: #F9DEDA;
+  --face: #1C2226;
+  --face-btn: #2A3338;
+  --face-line: #3A454C;
+  --face-ink: #E6EBEE;
+  --face-mute: #93A0A8;
+  --lamp-off: #2A3338;
+  --lcd: #C9DDB4;
+  --lcd-ink: #17240F;
+  --font-display: 'Saira Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1316; --surface: #171D21; --field: #0F1316; --fg: #E7ECEF; --muted: #94A1A9; --line: #2B353B;
+    --stripe: #0A0D0F; --sel: #3A3210; --hot: #FF6B4D; --on-hot: #1A0A06;
+    --good: #5FCB8C; --on-good: #06210F; --good-bg: #16352A; --bad: #FF7A70; --on-bad: #2A0805; --bad-bg: #3A1C19;
+    --face: #0A0E10; --face-btn: #1C2428; --face-line: #2A343A; --lamp-off: #1C2428;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1316; --surface: #171D21; --field: #0F1316; --fg: #E7ECEF; --muted: #94A1A9; --line: #2B353B;
+  --stripe: #0A0D0F; --sel: #3A3210; --hot: #FF6B4D; --on-hot: #1A0A06;
+  --good: #5FCB8C; --on-good: #06210F; --good-bg: #16352A; --bad: #FF7A70; --on-bad: #2A0805; --bad-bg: #3A1C19;
+  --face: #0A0E10; --face-btn: #1C2428; --face-line: #2A343A; --lamp-off: #1C2428;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 44px; display: flex; flex-direction: column; gap: 20px; }
+
+header { display: flex; flex-direction: column; gap: 14px; }
+.stripe { height: 12px; border-radius: 2px; background: repeating-linear-gradient(-45deg, var(--accent) 0 14px, var(--stripe) 14px 28px); }
+.hrow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 6.5vw, 58px); line-height: 0.98; margin: 0; text-transform: uppercase; letter-spacing: 0.01em; text-wrap: balance; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 66ch; }
+.chip { font-family: var(--font-mono); font-size: 13px; font-weight: 500; padding: 7px 12px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.chip.good { background: var(--good-bg); color: var(--good); border-color: var(--good); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.07em; text-transform: uppercase; margin: 0 0 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; min-width: 0; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.row2.unequal { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+@media (max-width: 860px) { .row2, .row2.unequal { grid-template-columns: minmax(0, 1fr); } }
+
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > label, .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+input[type=text], input[type=date], input[type=number], select {
+  width: 100%; min-width: 0; font-family: var(--font-body); font-size: 15px; color: var(--fg); background: var(--field);
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+
+button { font-family: var(--font-body); font-size: 14px; font-weight: 600; border-radius: 4px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--field); color: var(--fg); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button:disabled { opacity: 0.5; cursor: default; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Summary */
+.verdict { font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 6vw, 46px); line-height: 1; text-transform: uppercase; }
+.verdict.good { color: var(--good); } .verdict.bad { color: var(--bad); } .verdict.idle { color: var(--muted); }
+.counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0 0; }
+.counts div { border-top: 2px solid var(--line); padding-top: 6px; }
+.counts b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.counts span { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.advice { margin: 14px 0 0; font-size: 14px; }
+.advice.bad { color: var(--bad); font-weight: 500; }
+
+/* Faceplate */
+.face { background: var(--face); border-color: var(--face-line); color: var(--face-ink); display: flex; flex-direction: column; gap: 14px; }
+.face .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.face .brand { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: 0.14em; color: var(--face-mute); text-transform: uppercase; }
+.face select { width: auto; max-width: 100%; background: var(--face-btn); color: var(--face-ink); border-color: var(--face-line); font-size: 13px; padding: 6px 8px; }
+.lcd { background: var(--lcd); color: var(--lcd-ink); border-radius: 4px; padding: 12px 14px 14px; font-family: var(--font-mono); box-shadow: inset 0 2px 8px rgba(0,0,0,0.35); }
+.lcd .l1 { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.lcd .val { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px; }
+.lcd .num { font-size: clamp(42px, 9vw, 60px); font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.lcd .u { font-size: 18px; font-weight: 500; }
+.lcd .l3 { font-size: 12px; display: flex; justify-content: space-between; gap: 8px; }
+.inds { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.ind .n { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--face-mute); text-transform: uppercase; margin-bottom: 4px; }
+.seg { display: flex; border: 1px solid var(--face-line); border-radius: 3px; overflow: hidden; }
+.seg span { flex: 1; text-align: center; padding: 5px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; color: var(--face-mute); background: var(--lamp-off); }
+.seg span.on { background: var(--accent); color: var(--on-accent); }
+.seg span.on.hot { background: var(--hot); color: var(--on-hot); }
+.lamps { display: flex; gap: 8px; align-items: center; }
+.lamp { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; padding: 5px 12px; border-radius: 3px; background: var(--lamp-off); color: var(--face-mute); }
+.lamp.on.pass { background: var(--good); color: var(--on-good); }
+.lamp.on.fail { background: var(--bad); color: var(--on-bad); }
+.lamps .idx { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--face-mute); }
+.face button { background: var(--face-btn); color: var(--face-ink); border-color: var(--face-line); }
+.face button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.face .btns { gap: 8px; }
+
+/* Diagram */
+.diawrap svg { width: 100%; height: auto; display: block; }
+.dia-cap { font-size: 13.5px; color: var(--muted); margin: 10px 0 0; min-height: 4.2em; }
+svg .w { fill: none; stroke: var(--fg); stroke-width: 2; }
+svg .w.hl { stroke: var(--hot); stroke-width: 3.5; }
+svg .box { fill: var(--field); stroke: var(--fg); stroke-width: 2; }
+svg .dash { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; }
+svg .td { fill: var(--fg); }
+svg .t { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .cap { font-family: var(--font-body); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; fill: var(--muted); }
+svg .faint { font-family: var(--font-body); font-size: 11px; fill: var(--muted); opacity: 0.8; }
+svg .hotf { fill: var(--hot); font-weight: 600; }
+svg .md { fill: var(--surface); stroke: var(--fg); stroke-width: 2; }
+svg .md.hl, svg .src { stroke: var(--hot); stroke-width: 3; }
+svg .src { fill: var(--surface); }
+
+/* Table */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 7px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--bg); position: sticky; top: 0; }
+tr.grp td { background: var(--bg); font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: 0.07em; text-transform: uppercase; padding: 8px 10px; }
+tr.grp td span { color: var(--muted); font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
+tr[data-id] { cursor: pointer; }
+tr[data-id].sel td { background: var(--sel); }
+td.open { color: var(--hot); font-weight: 600; }
+.mode { font-family: var(--font-mono); font-size: 11px; font-weight: 500; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); }
+.mode.sfc { border-color: var(--hot); color: var(--hot); }
+td.lim { font-family: var(--font-mono); font-size: 13px; }
+.rin { position: relative; display: flex; width: 150px; }
+.rin input { font-family: var(--font-mono); font-size: 14px; padding: 5px 38px 5px 8px; }
+.rin .u { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 11px; color: var(--muted); pointer-events: none; }
+.pcell { display: flex; align-items: center; gap: 8px; min-width: 130px; }
+.bar { flex: 1; height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--good); }
+.bar i.bad { background: var(--bad); }
+.pc { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 44px; text-align: right; }
+td.res { font-weight: 600; }
+td.res.ok { color: var(--good); } td.res.no { color: var(--bad); }
+.note { font-size: 13px; color: var(--muted); margin: 12px 0 0; min-height: 1.4em; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+#reportBox { width: 100%; margin-top: 12px; font-family: var(--font-mono); font-size: 12px; background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 20px; }
+summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: 0.07em; text-transform: uppercase; }
+.guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 14px; }
+.guide > div { min-width: 0; }
+.guide h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.guide ol, .guide ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.guide p { margin: 0 0 8px; }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="stripe" aria-hidden="true"></div>
+    <div class="hrow">
+      <div>
+        <h1>Electrical Safety Analyzer Lab</h1>
+        <p class="lede">Test a medical electrical device for earth resistance and leakage currents. Work through the matrix, record each reading from your analyzer and see at once whether it is inside the IEC 60601-1 limit.</p>
+      </div>
+      <div class="chip" id="hdrChip" role="status">No readings</div>
+    </div>
+  </header>
+
+  <div class="row2">
+    <section class="panel" aria-labelledby="h-dut">
+      <h2 id="h-dut">Device under test</h2>
+      <div class="fields">
+        <div class="field"><label for="dName">Equipment</label><input id="dName" type="text" placeholder="e.g. Patient monitor"></div>
+        <div class="field"><label for="dModel">Make and model</label><input id="dModel" type="text" placeholder="e.g. Acme PM-200"></div>
+        <div class="field"><label for="dSerial">Serial number</label><input id="dSerial" type="text" placeholder="e.g. SN 48213"></div>
+        <div class="field"><label for="dOp">Operator</label><input id="dOp" type="text" placeholder="Your name"></div>
+        <div class="field"><label for="dDate">Date</label><input id="dDate" type="date"></div>
+        <div class="field"><label for="dVolt">Mains voltage (V)</label><input id="dVolt" type="number" min="0" step="any" value="230"></div>
+        <div class="field">
+          <label for="dClass">Protection class</label>
+          <select id="dClass">
+            <option value="I" selected>Class I (protective earth)</option>
+            <option value="II">Class II (double insulated)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dAP">Applied part type</label>
+          <select id="dAP">
+            <option value="none">No applied part</option>
+            <option value="B">Type B</option>
+            <option value="BF" selected>Type BF</option>
+            <option value="CF">Type CF</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">Class and applied part type decide which tests apply and which limits are used. The table below rebuilds when you change them.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="h-sum">
+      <h2 id="h-sum">Summary</h2>
+      <div class="verdict idle" id="sumVerdict">No readings</div>
+      <div class="counts">
+        <div><b id="cTotal">0</b><span>Tests</span></div>
+        <div><b id="cDone">0</b><span>Recorded</span></div>
+        <div><b id="cPass">0</b><span>Passed</span></div>
+        <div><b id="cFail">0</b><span>Failed</span></div>
+      </div>
+      <p class="advice" id="sumClosest"></p>
+      <p class="advice" id="sumAdvice"></p>
+    </section>
+  </div>
+
+  <div class="row2 unequal">
+    <section class="panel face" aria-labelledby="h-face">
+      <div class="top">
+        <span class="brand" id="h-face">Safety analyzer</span>
+        <label class="lbl" for="vdev" style="color:var(--face-mute)">Virtual device</label>
+        <select id="vdev">
+          <option value="healthy" selected>Healthy device</option>
+          <option value="insul">Worn insulation</option>
+          <option value="earth">Damaged earth lead</option>
+          <option value="applied">Failed applied part</option>
+        </select>
+      </div>
+      <div class="lcd" role="group" aria-label="Analyzer display">
+        <div class="l1"><span id="lcdName">—</span><span id="lcdMode">—</span></div>
+        <div class="val"><span class="num" id="lcdVal">----</span><span class="u" id="lcdUnit"></span></div>
+        <div class="l3"><span id="lcdLim">—</span><span id="lcdPc"></span></div>
+      </div>
+      <div class="inds">
+        <div class="ind"><div class="n">Polarity</div><div class="seg"><span id="pN">NORMAL</span><span id="pR">REVERSE</span></div></div>
+        <div class="ind"><div class="n">Earth</div><div class="seg"><span id="eC">CLOSED</span><span id="eO">OPEN</span></div></div>
+        <div class="ind"><div class="n">Neutral</div><div class="seg"><span id="nC">CLOSED</span><span id="nO">OPEN</span></div></div>
+      </div>
+      <div class="lamps">
+        <span class="lamp pass" id="lampPass">PASS</span>
+        <span class="lamp fail" id="lampFail">FAIL</span>
+        <span class="idx" id="faceIdx">Test 0 of 0</span>
+      </div>
+      <div class="btns">
+        <button type="button" id="bPrev">‹ Prev</button>
+        <button type="button" id="bMeas" class="primary">Measure</button>
+        <button type="button" id="bNext">Next ›</button>
+      </div>
+      <div class="btns">
+        <button type="button" id="bAll">Measure all</button>
+        <button type="button" id="bClear">Clear all</button>
+      </div>
+    </section>
+
+    <section class="panel diawrap" aria-labelledby="h-dia">
+      <h2 id="h-dia">Test circuit</h2>
+      <svg id="dia" viewBox="0 0 660 312" role="img" aria-label="Test circuit"></svg>
+      <p class="dia-cap" id="diaCap"></p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-tab">
+    <h2 id="h-tab">Test matrix</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Polarity</th><th>Earth</th><th>Neutral</th><th>Limit</th><th>Reading</th><th>Against limit</th><th>Result</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b>NC</b> normal condition</span>
+      <span><b>SFC</b> single fault condition (open earth, open neutral, or mains on applied part)</span>
+    </div>
+    <p class="note" id="note" role="status"></p>
+    <p class="hint" style="margin-top:4px">Limits are the general IEC 60601-1 values. Check them against the edition your lab uses and your own test sheet. Protective earth resistance is shown for a detachable mains cord (0.2 Ω including the cord).</p>
+    <div class="btns" style="margin-top:14px">
+      <button type="button" class="primary" id="bCopy">Copy report</button>
+    </div>
+    <textarea id="reportBox" rows="10" hidden readonly aria-label="Report text"></textarea>
+  </section>
+
+  <details>
+    <summary>Experiment guide</summary>
+    <div class="guide">
+      <div>
+        <h3>Aim</h3>
+        <p>To measure protective earth resistance and leakage currents of a medical electrical device with an electrical safety analyzer, and to judge the device against IEC 60601-1 limits.</p>
+        <h3>Apparatus</h3>
+        <ul>
+          <li>Electrical safety analyzer with test socket and applied part terminals</li>
+          <li>Device under test with its mains cord</li>
+          <li>Applied part leads or adapter (for BF and CF parts)</li>
+          <li>Mains supply protected by an RCD</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Theory</h3>
+        <ul>
+          <li><b>Earth leakage</b> flows along the protective earth conductor back to the supply.</li>
+          <li><b>Touch (enclosure) leakage</b> would flow through a person touching the enclosure.</li>
+          <li><b>Patient leakage</b> would flow from the applied part, through the patient, to earth.</li>
+          <li><b>Mains on applied part</b> checks what happens if mains voltage reaches an F-type applied part.</li>
+          <li>The <b>measuring device (MD)</b> is a 1 kΩ resistor in series with a 10 kΩ resistor and 0.015 µF capacitor in parallel. It makes the reading follow the way the body responds to current at different frequencies.</li>
+          <li>Type B parts are body-referenced, BF are floating, and CF are floating with the tightest limits because they may touch the heart.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Procedure</h3>
+        <ol>
+          <li>Inspect the device, cord and plug, then fill in the device details above.</li>
+          <li>Plug the device into the analyzer test socket and connect the applied part leads.</li>
+          <li>For Class I devices, measure protective earth resistance first.</li>
+          <li>Work down the matrix. For each row, set the analyzer to that polarity and fault, wait for the reading to settle, then enter it.</li>
+          <li>Check the result column. Any value above its limit is a failure.</li>
+          <li>If any test fails, stop, tag the device out of service and report it. Repair it and repeat the full set.</li>
+          <li>Copy the report for your lab record.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Precautions</h3>
+        <ul>
+          <li>Never touch the enclosure or applied parts while a test is running.</li>
+          <li>Create open earth, open neutral and reversed polarity only with the analyzer's own switches.</li>
+          <li>Do not connect a patient or any other equipment during testing.</li>
+          <li>The virtual device is for practice. On the real experiment, record the values your analyzer shows.</li>
+        </ul>
+        <h3 style="margin-top:14px">Viva questions</h3>
+        <ul>
+          <li>Why are the limits higher in single fault condition?</li>
+          <li>Why is the CF limit lower than BF?</li>
+          <li>What does opening the earth do to touch current?</li>
+          <li>Why is the measuring device not a plain resistor?</li>
+        </ul>
+      </div>
+    </div>
+  </details>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var KINDS = {
+    pe:    { title: 'Protective earth resistance', short: 'PE resistance', unit: 'Ω', dec: 3 },
+    el:    { title: 'Earth leakage current', short: 'Earth leakage', unit: 'mA', dec: 2 },
+    touch: { title: 'Touch (enclosure) leakage current', short: 'Touch current', unit: 'µA', dec: 1 },
+    pat:   { title: 'Patient leakage current', short: 'Patient leakage', unit: 'µA', dec: 1 },
+    map:   { title: 'Patient leakage, mains on applied part', short: 'Mains on applied part', unit: 'µA', dec: 0 }
+  };
+  var EXPL = {
+    pe: 'A test current is driven through the earth path, from the mains plug earth pin to the exposed metal of the device. The analyzer reports the resistance of that path.',
+    el: 'Current that flows along the protective earth conductor back to the supply. The measuring device (MD) sits in the earth lead.',
+    touch: 'Current that would pass through a person touching the enclosure while standing on earth. The MD joins the enclosure to earth.',
+    pat: 'Current that would flow from the applied part, through the patient, to earth. The MD joins the applied part to earth.',
+    map: 'A source at 110% of mains voltage is connected to the applied part. The MD measures the current that would flow through the patient to earth.'
+  };
+  var PRESETS = {
+    healthy: { name: 'Healthy device',     pe: 0.07, el: 0.25, touch: 14, pat: 10, map: { BF: 620,  CF: 18 } },
+    insul:   { name: 'Worn insulation',    pe: 0.09, el: 4.6,  touch: 65, pat: 40, map: { BF: 900,  CF: 22 } },
+    earth:   { name: 'Damaged earth lead', pe: 0.58, el: 0.35, touch: 22, pat: 12, map: { BF: 650,  CF: 19 } },
+    applied: { name: 'Failed applied part', pe: 0.08, el: 0.3,  touch: 15, pat: 70, map: { BF: 5400, CF: 55 } }
+  };
+
+  var rows = [], readings = {}, selId = null, busy = false;
+
+  /* ---------- rows ---------- */
+  function buildRows() {
+    var cls = $('dClass').value, ap = $('dAP').value, out = [];
+    function add(kind, mode, pol, earth, neut, limit) {
+      out.push({ kind: kind, mode: mode, pol: pol, earth: earth, neut: neut, limit: limit, id: kind + '_' + mode + '_' + pol + earth + neut });
+    }
+    if (cls === 'I') {
+      add('pe', 'NA', 'N', 'C', 'C', 0.2);
+      add('el', 'NC', 'N', 'C', 'C', 5);  add('el', 'NC', 'R', 'C', 'C', 5);
+      add('el', 'SFC', 'N', 'C', 'O', 10); add('el', 'SFC', 'R', 'C', 'O', 10);
+    }
+    function leak(kind, ncL, sfcL) {
+      add(kind, 'NC', 'N', 'C', 'C', ncL); add(kind, 'NC', 'R', 'C', 'C', ncL);
+      if (cls === 'I') { add(kind, 'SFC', 'N', 'O', 'C', sfcL); add(kind, 'SFC', 'R', 'O', 'C', sfcL); }
+      add(kind, 'SFC', 'N', 'C', 'O', sfcL); add(kind, 'SFC', 'R', 'C', 'O', sfcL);
+    }
+    leak('touch', 100, 500);
+    if (ap !== 'none') {
+      leak('pat', ap === 'CF' ? 10 : 100, ap === 'CF' ? 50 : 500);
+      if (ap !== 'B') {
+        var ml = ap === 'CF' ? 50 : 5000;
+        add('map', 'SFC', 'N', 'C', 'C', ml); add('map', 'SFC', 'R', 'C', 'C', ml);
+      }
+    }
+    return out;
+  }
+  function rowById(id) { for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i]; return null; }
+  function limitText(r) { return '≤ ' + r.limit + ' ' + KINDS[r.kind].unit; }
+  function rowLabel(r) {
+    var s = KINDS[r.kind].short;
+    if (r.mode !== 'NA') s += ', ' + r.mode;
+    return s + ', ' + (r.pol === 'R' ? 'reverse polarity' : 'normal polarity') + (r.earth === 'O' ? ', earth open' : '') + (r.neut === 'O' ? ', neutral open' : '');
+  }
+
+  /* ---------- table ---------- */
+  function renderTable() {
+    var html = '', last = null;
+    rows.forEach(function (r) {
+      if (r.kind !== last) {
+        html += '<tr class="grp"><td colspan="8">' + KINDS[r.kind].title + ' <span>(' + KINDS[r.kind].unit + ')</span></td></tr>';
+        last = r.kind;
+      }
+      var mode = r.mode === 'NA' ? '—' : '<span class="mode ' + (r.mode === 'SFC' ? 'sfc' : '') + '">' + r.mode + '</span>';
+      var v = readings[r.id] !== undefined ? readings[r.id] : '';
+      html += '<tr data-id="' + r.id + '">' +
+        '<td>' + mode + '</td>' +
+        '<td>' + (r.pol === 'R' ? 'Reverse' : 'Normal') + '</td>' +
+        '<td class="' + (r.earth === 'O' ? 'open' : '') + '">' + (r.earth === 'O' ? 'Open' : 'Closed') + '</td>' +
+        '<td class="' + (r.neut === 'O' ? 'open' : '') + '">' + (r.neut === 'O' ? 'Open' : 'Closed') + '</td>' +
+        '<td class="lim">' + limitText(r) + '</td>' +
+        '<td><div class="rin"><input type="number" min="0" step="any" inputmode="decimal" data-id="' + r.id + '" aria-label="Reading for ' + rowLabel(r) + '" value="' + v + '"><span class="u">' + KINDS[r.kind].unit + '</span></div></td>' +
+        '<td><div class="pcell"><div class="bar"><i></i></div><span class="pc">—</span></div></td>' +
+        '<td class="res">—</td></tr>';
+    });
+    $('tbody').innerHTML = html;
+    rows.forEach(function (r) { paintRow(r); });
+  }
+  function paintRow(r) {
+    var tr = $('tbody').querySelector('tr[data-id="' + r.id + '"]');
+    if (!tr) return;
+    var v = parseFloat(readings[r.id]);
+    var bar = tr.querySelector('.bar i'), pc = tr.querySelector('.pc'), res = tr.querySelector('.res');
+    if (!isFinite(v)) { bar.style.width = '0'; bar.className = ''; pc.textContent = '—'; res.textContent = '—'; res.className = 'res'; return; }
+    var pct = v / r.limit * 100, ok = v <= r.limit;
+    bar.style.width = Math.min(100, pct) + '%';
+    bar.className = ok ? '' : 'bad';
+    pc.textContent = Math.round(pct) + '%';
+    res.textContent = ok ? 'Pass' : 'Fail';
+    res.className = 'res ' + (ok ? 'ok' : 'no');
+  }
+  function setValue(id, text) {
+    readings[id] = text;
+    var inp = $('tbody').querySelector('input[data-id="' + id + '"]');
+    if (inp && inp.value !== text) inp.value = text;
+    var r = rowById(id);
+    if (r) paintRow(r);
+    summarize(); drawFace();
+  }
+
+  /* ---------- summary ---------- */
+  function summarize() {
+    var tested = 0, pass = 0, fail = 0, worst = null;
+    rows.forEach(function (r) {
+      var v = parseFloat(readings[r.id]);
+      if (!isFinite(v)) return;
+      tested++;
+      if (v <= r.limit) pass++; else fail++;
+      var pc = v / r.limit * 100;
+      if (!worst || pc > worst.pc) worst = { r: r, pc: pc };
+    });
+    $('cTotal').textContent = rows.length; $('cDone').textContent = tested;
+    $('cPass').textContent = pass; $('cFail').textContent = fail;
+    var vEl = $('sumVerdict'), chip = $('hdrChip'), txt, cls;
+    if (tested === 0) { txt = 'No readings'; cls = 'idle'; }
+    else if (fail > 0) { txt = 'Fail'; cls = 'bad'; }
+    else if (tested < rows.length) { txt = 'In progress'; cls = 'idle'; }
+    else { txt = 'Pass'; cls = 'good'; }
+    vEl.textContent = txt; vEl.className = 'verdict ' + cls;
+    var chipTxt = tested === 0 ? 'No readings' : fail > 0 ? 'FAIL · ' + fail + ' of ' + tested + ' outside limit' : tested < rows.length ? 'In progress · ' + tested + ' of ' + rows.length + ' recorded' : 'PASS · all ' + rows.length + ' within limit';
+    chip.textContent = chipTxt; chip.className = 'chip' + (cls === 'idle' ? '' : ' ' + cls);
+    $('sumClosest').textContent = worst ? 'Closest to its limit: ' + rowLabel(worst.r) + ' at ' + Math.round(worst.pc) + '% of the limit.' : 'Record a reading to see how close each test is to its limit.';
+    var adv = $('sumAdvice');
+    if (fail > 0) { adv.textContent = 'Take the device out of service until it is repaired and the full set of tests is repeated.'; adv.className = 'advice bad'; }
+    else if (tested > 0 && tested < rows.length) { adv.textContent = 'None of the recorded tests has failed so far. ' + (rows.length - tested) + ' still to do.'; adv.className = 'advice'; }
+    else if (tested === rows.length && tested > 0) { adv.textContent = 'Every test is inside its limit for this device class and applied part type.'; adv.className = 'advice'; }
+    else { adv.textContent = ''; adv.className = 'advice'; }
+  }
+
+  /* ---------- faceplate ---------- */
+  function fmtVal(r, v) { return v.toFixed(KINDS[r.kind].dec); }
+  function drawFace() {
+    var r = rowById(selId);
+    if (!r) return;
+    var K = KINDS[r.kind], v = parseFloat(readings[r.id]);
+    $('lcdName').textContent = K.short;
+    $('lcdMode').textContent = r.mode === 'NA' ? 'EARTH PATH' : r.mode === 'NC' ? 'NORMAL' : 'SINGLE FAULT';
+    if (!busy) $('lcdVal').textContent = isFinite(v) ? fmtVal(r, v) : '----';
+    $('lcdUnit').textContent = K.unit;
+    $('lcdLim').textContent = 'LIMIT ' + limitText(r);
+    $('lcdPc').textContent = isFinite(v) ? Math.round(v / r.limit * 100) + '% OF LIMIT' : '';
+    function seg(a, b, firstOn, hot) {
+      $(a).className = firstOn ? 'on' : ''; $(b).className = !firstOn ? 'on' + (hot ? ' hot' : '') : '';
+    }
+    seg('pN', 'pR', r.pol === 'N', false);
+    seg('eC', 'eO', r.earth === 'C', true);
+    seg('nC', 'nO', r.neut === 'C', true);
+    $('lampPass').className = 'lamp pass' + (isFinite(v) && v <= r.limit ? ' on' : '');
+    $('lampFail').className = 'lamp fail' + (isFinite(v) && v > r.limit ? ' on' : '');
+    var idx = rows.indexOf(r) + 1;
+    $('faceIdx').textContent = 'Test ' + idx + ' of ' + rows.length;
+  }
+
+  /* ---------- diagram ---------- */
+  function drawDiagram() {
+    var r = rowById(selId);
+    if (!r) { $('dia').innerHTML = ''; $('diaCap').textContent = ''; return; }
+    var cls = $('dClass').value, ap = $('dAP').value;
+    var rev = r.pol === 'R', eo = r.earth === 'O', no = r.neut === 'O', k = r.kind;
+    var s = '';
+    function P(d, hl) { return '<path d="' + d + '" class="w' + (hl ? ' hl' : '') + '"/>'; }
+    function T(x, y, t, c, a) { return '<text x="' + x + '" y="' + y + '" class="' + (c || 't') + '" text-anchor="' + (a || 'start') + '">' + t + '</text>'; }
+    function D(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="4" class="td"/>'; }
+    function MD(x, y, hl, lab) { return '<circle cx="' + x + '" cy="' + y + '" r="15" class="md' + (hl ? ' hl' : '') + '"/>' + T(x, y + 4, lab || 'MD', 't', 'middle'); }
+
+    s += '<rect x="330" y="30" width="250" height="185" rx="6" class="box"/>';
+    s += T(345, 50, 'DEVICE UNDER TEST', 'cap');
+    s += T(455, 128, 'Internal circuits', 'faint', 'middle');
+    s += T(14, 22, 'MAINS SUPPLY', 'cap');
+    s += '<rect x="66" y="38" width="100" height="94" rx="4" class="dash"/>';
+    s += T(116, 148, rev ? 'POLARITY REVERSED' : 'POLARITY NORMAL', rev ? 't hotf' : 't', 'middle');
+
+    /* mains wires through polarity block */
+    if (rev) { s += P('M40 60 H96 L136 110 H166'); s += P('M40 110 H96 L136 60 H166'); }
+    else { s += P('M40 60 H166'); s += P('M40 110 H166'); }
+    s += P('M166 60 H330');
+    /* neutral switch */
+    s += P('M166 110 H215');
+    s += no ? P('M215 110 L250 90') : P('M215 110 H255');
+    s += P('M255 110 H330');
+    s += D(215, 110) + D(255, 110);
+    s += T(235, 136, no ? 'N OPEN' : 'N CLOSED', no ? 't hotf' : 't', 'middle');
+    s += D(40, 60) + D(40, 110) + T(30, 64, 'L', 't', 'end') + T(30, 114, 'N', 't', 'end');
+    s += T(342, 64, 'L') + T(342, 114, 'N');
+
+    /* earth */
+    s += D(40, 200) + T(30, 204, 'PE', 't', 'end');
+    if (cls === 'I') {
+      s += P('M40 200 H215');
+      s += eo ? P('M215 200 L250 180') : P('M215 200 H255');
+      s += D(215, 200) + D(255, 200);
+      s += T(235, 226, eo ? 'PE OPEN' : 'PE CLOSED', eo ? 't hotf' : 't', 'middle');
+      var mdInline = (k === 'el' || k === 'pe');
+      if (mdInline) { s += P('M255 200 H275'); s += P('M305 200 H330'); }
+      else s += P('M255 200 H330');
+      s += D(330, 200) + T(342, 204, 'PE');
+    } else {
+      s += T(100, 190, 'Class II: no protective earth', 'faint');
+    }
+    /* earth rail */
+    s += P('M40 200 V296 H600');
+    s += T(606, 300, 'EARTH', 'cap');
+
+    /* terminals on the enclosure and applied part */
+    s += D(410, 215) + T(410, 204, 'Enclosure', 't', 'middle');
+    if (ap !== 'none') s += D(520, 215) + T(520, 204, 'Applied part ' + ap, 't', 'middle');
+
+    /* highlighted paths */
+    if (k === 'pe') { s += P('M40 200 H215', true) + P('M255 200 H275', true) + P('M305 200 H330', true) + MD(290, 200, true, 'Ω'); s += T(140, 188, 'Test current path', 't hotf', 'middle'); }
+    if (k === 'el') { s += P('M255 200 H275', true) + P('M305 200 H330', true) + MD(290, 200, true, 'MD'); }
+    if (k === 'touch') { s += P('M410 215 V247', true) + P('M410 277 V296', true) + MD(410, 262, true, 'MD'); }
+    if (k === 'pat') { s += P('M520 215 V247', true) + P('M520 277 V296', true) + MD(520, 262, true, 'MD'); }
+    if (k === 'map') {
+      s += P('M520 215 V222', true) + P('M520 242 V247', true) + P('M520 277 V296', true);
+      s += '<circle cx="520" cy="232" r="10" class="src"/>' + T(520, 236, '~', 't hotf', 'middle');
+      s += T(538, 236, '110% mains', 't hotf');
+      s += MD(520, 262, true, 'MD');
+    }
+    $('dia').innerHTML = s;
+    $('dia').setAttribute('aria-label', 'Test circuit for ' + rowLabel(r));
+    var cap = KINDS[r.kind].title + '. ' + EXPL[r.kind];
+    var extra = [];
+    if (rev) extra.push('supply polarity reversed');
+    if (eo) extra.push('protective earth open');
+    if (no) extra.push('neutral open');
+    $('diaCap').textContent = cap + (extra.length ? ' Conditions applied: ' + extra.join(', ') + '.' : '');
+  }
+
+  /* ---------- selection ---------- */
+  function select(id, scroll) {
+    if (!rowById(id)) return;
+    selId = id;
+    var prev = $('tbody').querySelector('tr.sel');
+    if (prev) prev.classList.remove('sel');
+    var tr = $('tbody').querySelector('tr[data-id="' + id + '"]');
+    if (tr) { tr.classList.add('sel'); if (scroll && tr.scrollIntoView) tr.scrollIntoView({ block: 'nearest' }); }
+    drawFace(); drawDiagram();
+  }
+  function step(d) {
+    var i = rows.indexOf(rowById(selId)) + d;
+    if (i < 0 || i >= rows.length) return;
+    select(rows[i].id, true);
+  }
+
+  /* ---------- virtual device ---------- */
+  function virtual(r) {
+    var p = PRESETS[$('vdev').value], ap = $('dAP').value, f = r.pol === 'R' ? 1.1 : 1, v;
+    if (r.kind === 'pe') v = p.pe;
+    else if (r.kind === 'el') { v = p.el * f; if (r.neut === 'O') v *= 2.1; }
+    else if (r.kind === 'touch') { v = p.touch * f; if (r.earth === 'O') v *= 9; if (r.neut === 'O') v *= 1.8; }
+    else if (r.kind === 'pat') { v = p.pat * f * (ap === 'CF' ? 0.12 : 1); if (r.earth === 'O') v *= 7; if (r.neut === 'O') v *= 1.7; }
+    else v = p.map[ap === 'CF' ? 'CF' : 'BF'] * f;
+    return v * (1 + (Math.random() - 0.5) * 0.03);
+  }
+  function setNote(t) { $('note').textContent = t; }
+  function virtualNote() { setNote('Readings shown were produced by the virtual device (' + PRESETS[$('vdev').value].name + '). Press Clear all before you record values from a real analyzer.'); }
+  function measureOne() {
+    var r = rowById(selId);
+    if (!r || busy) return;
+    var target = virtual(r), dec = KINDS[r.kind].dec;
+    var finish = function () { busy = false; $('bMeas').disabled = false; setValue(r.id, target.toFixed(dec)); virtualNote(); };
+    if (reduce) { finish(); return; }
+    busy = true; $('bMeas').disabled = true;
+    var n = 0, iv = setInterval(function () {
+      n++;
+      if (n < 10) $('lcdVal').textContent = (target * (0.4 + Math.random() * 1.2)).toFixed(dec);
+      else { clearInterval(iv); finish(); }
+    }, 60);
+  }
+  function measureAll() {
+    if (busy) return;
+    rows.forEach(function (r) { readings[r.id] = virtual(r).toFixed(KINDS[r.kind].dec); });
+    renderTable(); summarize();
+    select(selId || rows[0].id, false);
+    virtualNote();
+  }
+  function clearAll() {
+    if (busy) return;
+    readings = {};
+    renderTable(); summarize();
+    select(selId || rows[0].id, false);
+    setNote('');
+  }
+
+  /* ---------- report ---------- */
+  function reportText() {
+    var v = function (id) { var x = $(id).value.trim(); return x || '—'; };
+    var L = [];
+    L.push('ELECTRICAL SAFETY ANALYZER REPORT');
+    L.push('Equipment: ' + v('dName') + ' | Make and model: ' + v('dModel') + ' | Serial: ' + v('dSerial'));
+    L.push('Class: ' + $('dClass').value + ' | Applied part: ' + $('dAP').options[$('dAP').selectedIndex].text + ' | Mains: ' + v('dVolt') + ' V');
+    L.push('Operator: ' + v('dOp') + ' | Date: ' + v('dDate'));
+    L.push('Limits: IEC 60601-1 general values');
+    L.push('');
+    L.push('Test | Mode | Polarity | Earth | Neutral | Limit | Reading | Result');
+    rows.forEach(function (r) {
+      var x = parseFloat(readings[r.id]), K = KINDS[r.kind];
+      L.push([K.short, r.mode === 'NA' ? '-' : r.mode, r.pol === 'R' ? 'Reverse' : 'Normal', r.earth === 'O' ? 'Open' : 'Closed', r.neut === 'O' ? 'Open' : 'Closed',
+        limitText(r), isFinite(x) ? x + ' ' + K.unit : 'not recorded', isFinite(x) ? (x <= r.limit ? 'Pass' : 'Fail') : '-'].join(' | '));
+    });
+    L.push('');
+    L.push('Overall: ' + $('hdrChip').textContent);
+    return L.join('\n');
+  }
+
+  /* ---------- events ---------- */
+  function rebuild() {
+    rows = buildRows();
+    var keep = {};
+    rows.forEach(function (r) { if (readings[r.id] !== undefined) keep[r.id] = readings[r.id]; });
+    readings = keep;
+    renderTable(); summarize();
+    select(rowById(selId) ? selId : rows[0].id, false);
+  }
+  $('dClass').addEventListener('change', rebuild);
+  $('dAP').addEventListener('change', rebuild);
+
+  $('tbody').addEventListener('input', function (e) {
+    var inp = e.target.closest('input[data-id]');
+    if (!inp) return;
+    setValue(inp.getAttribute('data-id'), inp.value);
+    setNote('');
+  });
+  $('tbody').addEventListener('focusin', function (e) {
+    var inp = e.target.closest('input[data-id]');
+    if (inp && inp.getAttribute('data-id') !== selId) select(inp.getAttribute('data-id'), false);
+  });
+  $('tbody').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-id]');
+    if (tr && tr.getAttribute('data-id') !== selId) select(tr.getAttribute('data-id'), false);
+  });
+  $('bPrev').addEventListener('click', function () { step(-1); });
+  $('bNext').addEventListener('click', function () { step(1); });
+  $('bMeas').addEventListener('click', measureOne);
+  $('bAll').addEventListener('click', measureAll);
+  $('bClear').addEventListener('click', clearAll);
+  $('bCopy').addEventListener('click', function () {
+    var text = reportText(), box = $('reportBox');
+    var fallback = function () { box.value = text; box.hidden = false; box.focus(); box.select(); $('bCopy').textContent = 'Select and copy below'; };
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        box.hidden = true; $('bCopy').textContent = 'Copied';
+        setTimeout(function () { $('bCopy').textContent = 'Copy report'; }, 1500);
+      }, fallback);
+    } catch (err) { fallback(); }
+  });
+
+  /* ---------- start: sample run from the virtual device ---------- */
+  (function init() {
+    var d = new Date();
+    $('dDate').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    rows = buildRows();
+    rows.forEach(function (r) { readings[r.id] = virtual(r).toFixed(KINDS[r.kind].dec); });
+    renderTable(); summarize();
+    select(rows[0].id, false);
+    virtualNote();
+  })();
+})();
+</script>
+
+</body></html>
